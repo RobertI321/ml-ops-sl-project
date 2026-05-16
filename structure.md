@@ -5,30 +5,38 @@ A production-grade MLOps pipeline built around Stream Learning, where a model co
 ---
 
 ## Setup
-- [ ] Create project folder and open in VSCode
-- [ ] Initialize git repo (`git init`)
-- [ ] Create and activate virtual environment
-- [ ] Create `requirements.txt`
-- [ ] Create `.gitignore` — add: `venv/`, `mlruns/`, `__pycache__/`, `.env`
-- [ ] Create folder structure: `src/`, `tests/`, `.github/workflows/`
-- [ ] Initial commit
+- [x] Create project folder and open in VSCode
+- [x] Initialize git repo (`git init`)
+- [x] Create and activate virtual environment
+- [x] Create `requirements.txt`
+- [x] Create `.gitignore` — add: `venv/`, `mlruns/`, `__pycache__/`, `.env`
+- [x] Create folder structure: `src/`, `tests/`, `.github/workflows/`
+- [x] Initial commit
 
 ---
 
 ## Phase 1 — Understand the data
-- [ ] Read the API documentation
-- [ ] Write a scratch script that fetches one response and prints it raw
-- [ ] Decide what your prediction target is
-- [ ] Decide what features you will derive from each event
-- [ ] Decide when the label arrives
-- [ ] Confirm you can simulate a stream by polling repeatedly
-- [ ] Write clean `src/ingest.py`
+- [x] Read the API documentation
+- [x] Write a scratch script that fetches one response and prints it raw
+- [x] Decide what your prediction target is — price direction up/down
+- [x] Decide what features you will derive from each event
+- [x] Decide when the label arrives — on the next poll
+- [x] Confirm you can simulate a stream by polling repeatedly
+- [x] Write clean `src/ingest.py`
 
 ---
 
-## Phase 2 — Stream Learning model
-- [ ] Install River
-- [ ] Write `src/train.py` — fetch event → predict → receive label → update model
+## Phase 2 — Kafka
+- [x] Add Kafka and Zookeeper to `docker-compose.yml`
+- [x] Write `Dockerfile.ingest`
+- [x] Add Kafka producer to `ingest.py`
+- [x] Confirm messages are arriving in the topic
+- [x] Confirm ingest container runs stably without crashing
+
+---
+
+## Phase 3 — Stream Learning model
+- [ ] Write `src/train.py` — consume from Kafka → predict → update model
 - [ ] Confirm the model is learning (AUC improving over time)
 - [ ] Add ADWIN drift detector
 - [ ] Confirm drift events are being detected and printed
@@ -36,9 +44,8 @@ A production-grade MLOps pipeline built around Stream Learning, where a model co
 
 ---
 
-## Phase 3 — MLflow
-- [ ] Install MLflow
-- [ ] Start MLflow server locally and confirm UI is accessible
+## Phase 4 — MLflow
+- [ ] Add MLflow service to `docker-compose.yml`
 - [ ] Log AUC every N events inside the training loop
 - [ ] Log drift events as run tags
 - [ ] Register serialized model versions to MLflow model registry
@@ -46,21 +53,13 @@ A production-grade MLOps pipeline built around Stream Learning, where a model co
 
 ---
 
-## Phase 4 — Flask inference API
+## Phase 5 — Flask inference API
 - [ ] Write `src/serve.py` — Flask app that loads the latest model version from MLflow
 - [ ] Add a `/predict` endpoint
 - [ ] Add a background thread that polls MLflow for new versions and hot-swaps
 - [ ] Test the endpoint manually with a sample request
 - [ ] Confirm the model updates without restarting the server
-
----
-
-## Phase 5 — Docker and Docker Compose
-- [ ] Write `Dockerfile` for the inference service
-- [ ] Confirm the Flask app runs inside the container
-- [ ] Write `docker-compose.yml` with three services: ingest/train, MLflow, serve
-- [ ] Confirm all services start and can communicate
-- [ ] Confirm the full pipeline runs end to end inside Docker Compose
+- [ ] Add serve service to `docker-compose.yml`
 
 ---
 

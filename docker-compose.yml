@@ -1,0 +1,40 @@
+services:
+  kafka:
+    image: apache/kafka:3.9.2
+    container_name: kafka-broker
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER # Listener name for inter-controller communication
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093 # Ports for broker and controller
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092 # External listener for clients
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093 # Quorum voters for the controller in KRaft mode
+
+    healthcheck:
+      test: [ "CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 > /dev/null 2>&1" ]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+
+  ingest:
+    build:
+      context: .
+      dockerfile: Dockerfile.ingest
+    container_name: ingest
+    env_file:
+      - .env
+    depends_on:
+      kafka:
+        condition: service_healthy
+    environment:
+      API_KEY: ${API_KEY}
+      PYTHONUNBUFFERED: 1
+    command: [ "python", "ingest.py" ]
