@@ -118,5 +118,27 @@ services:
       mc:
         condition: service_completed_successfully
 
+  api-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.serve
+    container_name: api-service
+    ports:
+      - "3001:3001"
+    env_file:
+      - .env
+    environment:
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      MLFLOW_S3_ENDPOINT_URL: http://minio-server:9000
+      AWS_ACCESS_KEY_ID: ${ACCESS_KEY}
+      AWS_SECRET_ACCESS_KEY: ${ACCESS_PASSWORD}
+    depends_on:
+      mlflow:
+        condition: service_healthy
+      minio-server:
+        condition: service_healthy
+    command: [ "python", "serve.py" ]
+    restart: on-failure
+
 volumes:
   minio_data:

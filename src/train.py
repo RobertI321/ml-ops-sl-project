@@ -23,6 +23,7 @@ client = MlflowClient()
 GRACE_PERIOD = config["model"]["grace_period"]
 TRIGGER_FREQUENCY = GRACE_PERIOD  
 
+# Extract features and label from events
 def extract_features_and_label(event):
     X = {
         "current_price": event["current_price"],
@@ -35,9 +36,9 @@ def extract_features_and_label(event):
     y = event["label"]
     return X, y
 
+# Save model to MLflow and register new version
 def save_model(model, run_id, model_name):
     # figure out what the next version number will be
-
     try:
         client.create_registered_model(model_name)
     except Exception:
@@ -64,9 +65,7 @@ def save_model(model, run_id, model_name):
     )
     return mv.version
 
-
 def main():
-
     # Kafka consumer setup
     consumer = KafkaConsumer(
         'stock-recommendations',
@@ -77,7 +76,6 @@ def main():
         value_deserializer=lambda x: json.loads(x.decode('utf-8'))
     )
     
-
     # Models and metrics
     model = tree.HoeffdingAdaptiveTreeClassifier(**model_config)
     metric = metrics.ROCAUC()  # Using AUC as the evaluation metric
@@ -119,10 +117,11 @@ def main():
 
                 # Check for concept drift
                 if drift_detector.drift_detected:
-                    print(f'Drift detected at offset {message.offset}')
-                    mlflow.set_tag(f"drift_at_event_{message.offset}", "True")
-                    mlflow.set_tag("total errors", drift_detector.n_detections)
+                    mlflow.log_metric("drift_detected", 1, step=event_count)
+                else:
+                    mlflow.log_metric("drift_detected", 0, step=event_count)
                 
+                # Save model periodically based on event count
                 if event_count % TRIGGER_FREQUENCY == 0:
                     print(f"Saving model version at event {event_count}")
                     save_model(model, mlflow.active_run().info.run_id, mlflow_config["model_name"])
@@ -135,7 +134,6 @@ def main():
                     alias="Production",                    
                     )
                     print(f"Model version {latest_version} set as Production")
-
 
         except KeyboardInterrupt:
             print("Stopping consumer...")
