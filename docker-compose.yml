@@ -47,8 +47,14 @@ services:
     depends_on:
       kafka:
         condition: service_healthy
+    env_file:
+      - .env
     environment:
       PYTHONUNBUFFERED: 1
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      MLFLOW_S3_ENDPOINT_URL: http://minio-server:9000
+      AWS_ACCESS_KEY_ID: ${ACCESS_KEY}
+      AWS_SECRET_ACCESS_KEY: ${ACCESS_PASSWORD}
     command: [ "python", "train.py" ]
 
   minio-server:
@@ -101,10 +107,11 @@ services:
       - "5000:5000"
     environment:
       MLFLOW_S3_ENDPOINT_URL: http://minio-server:9000
+      MLFLOW_ALLOWED_HOSTS: "*"
       AWS_ACCESS_KEY_ID: ${ACCESS_KEY}
       AWS_SECRET_ACCESS_KEY: ${ACCESS_PASSWORD}
     entrypoint: >
-      /bin/sh -c "pip install boto3 pyarrow && mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri sqlite:///mlflow.db --default-artifact-root s3://mlflow/"
+      /bin/sh -c "pip install boto3 pyarrow && mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri sqlite:///mlflow.db --default-artifact-root s3://mlflow/ --allowed-hosts 'mlflow:*,localhost:*,127.0.0.1:*,*'"
     depends_on:
       minio-server:
         condition: service_healthy

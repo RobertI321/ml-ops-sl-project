@@ -1,0 +1,17 @@
+model:
+  grace_period: 50
+  tau: 0.05
+  delta: 1.0e-7
+  max_size: 100
+  bootstrap_sampling: true
+
+mlflow:
+  tracking_uri: "http://mlflow:5000"
+  experiment_name: "btc-prediction"
+  model_name: "btc-prediction-model"
+
+stream:
+  symbol: "BINANCE:BTCUSDT"
+  trigger_frequency: 50
+  kafka_topic: "stock-recommendations"
+  kafka_broker: "kafka:9092"
