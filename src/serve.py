@@ -16,6 +16,7 @@ client = MlflowClient()
 current_model = None
 current_version = None
 
+
 def refresh_model():
     global current_model, current_version
     while True:

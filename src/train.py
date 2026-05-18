@@ -8,21 +8,6 @@ import pickle
 import tempfile
 import os
 
-
-with open("config.yaml", "r") as f:
-    config = yaml.safe_load(f)
-
-model_config = config["model"]
-mlflow_config = config["mlflow"]
-
-mlflow.set_tracking_uri(config["mlflow"]["tracking_uri"])
-mlflow.set_experiment(config["mlflow"]["experiment_name"])
-client = MlflowClient()
-
-# Model update period (number of events before model update)
-GRACE_PERIOD = config["model"]["grace_period"]
-TRIGGER_FREQUENCY = GRACE_PERIOD  
-
 # Extract features and label from events
 def extract_features_and_label(event):
     X = {
@@ -37,7 +22,7 @@ def extract_features_and_label(event):
     return X, y
 
 # Save model to MLflow and register new version
-def save_model(model, run_id, model_name):
+def save_model(model, run_id, model_name, client):
     # figure out what the next version number will be
     try:
         client.create_registered_model(model_name)
@@ -66,6 +51,20 @@ def save_model(model, run_id, model_name):
     return mv.version
 
 def main():
+
+    with open("config.yaml", "r") as f:
+        config = yaml.safe_load(f)
+
+    model_config = config["model"]
+    mlflow_config = config["mlflow"]
+
+    mlflow.set_tracking_uri(config["mlflow"]["tracking_uri"])
+    mlflow.set_experiment(config["mlflow"]["experiment_name"])
+    client = MlflowClient()
+
+    # Model update period (number of events before model update)
+    GRACE_PERIOD = config["model"]["grace_period"]
+    TRIGGER_FREQUENCY = GRACE_PERIOD  
     # Kafka consumer setup
     consumer = KafkaConsumer(
         'stock-recommendations',
@@ -124,7 +123,7 @@ def main():
                 # Save model periodically based on event count
                 if event_count % TRIGGER_FREQUENCY == 0:
                     print(f"Saving model version at event {event_count}")
-                    save_model(model, mlflow.active_run().info.run_id, mlflow_config["model_name"])
+                    save_model(model, mlflow.active_run().info.run_id, mlflow_config["model_name"], client)
 
                     versions = client.get_latest_versions(name=mlflow_config["model_name"])
                     latest_version = max(versions, key=lambda v: int(v.version)).version

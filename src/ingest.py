@@ -8,18 +8,6 @@ from finnhub.exceptions import FinnhubAPIException
 from dotenv import load_dotenv
 load_dotenv()
 
-# Client
-#finnhub_client = finnhub.Client(api_key=os.getenv("API_KEY"))
-
-# # Stock candles
-# quote = finnhub_client.quote("NVDA")
-# print("\n",quote)
-
-# # Recommendation trends
-# rec_trends = finnhub_client.recommendation_trends('NVDA')
-# print("\n",rec_trends)
-
-
 def get_recommendation_trends(client, latest_t=0):
 
     quote = client.quote("BINANCE:BTCUSDT")
@@ -53,14 +41,6 @@ def on_send_success(record_metadata):
 def on_send_error(excp):
     print('Failed to send message', exc_info=excp)
 
-# quote, rec, latest_t = get_recommendation_trends(finnhub_client)
-# event = build_event(quote, rec, quote["pc"])
-# print("\n", quote)
-# print("\n", rec)
-# print("\n", latest_t)
-# print("\n", event)
-
-
 def main():
     finnhub_client = finnhub.Client(api_key=os.getenv("API_KEY"))
     latest_t = 0
@@ -92,5 +72,6 @@ def main():
             print(f"Unexpected error: {e}")
 
         time.sleep(30)  # single sleep, always, end of loop
+        
 if __name__ == "__main__":
     main()
