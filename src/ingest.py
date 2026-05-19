@@ -5,10 +5,21 @@ import json
 import os
 from finnhub.exceptions import FinnhubAPIException
 
-from src.utilis import get_recommendation_trends, build_event
+from utils import build_event
 
 from dotenv import load_dotenv
 load_dotenv()
+
+def get_recommendation_trends(client, latest_t=0):
+
+    quote = client.quote("BINANCE:BTCUSDT")
+
+    if quote["t"] == latest_t:
+        return None
+    
+    latest_t = quote["t"]
+
+    return quote, latest_t
 
 def on_send_success(record_metadata):
     print(f"Message sent to {record_metadata.topic} partition {record_metadata.partition} offset {record_metadata.offset}")

@@ -1,8 +1,7 @@
 import sys
 sys.path.insert(0, './src')
 
-from utilis import extract_features_and_label, build_event
-
+from utils import extract_features_and_label, build_event
 
 fake_event = {
     "current_price": 78000,
