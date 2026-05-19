@@ -5,6 +5,8 @@ WORKDIR /pipeline
 COPY src/serve.py .
 COPY requirements.txt .
 COPY configs/config.yaml .
+COPY src/utils.py .
+
 
 RUN pip install --no-cache-dir -r requirements.txt
 
