@@ -1,10 +1,7 @@
-import pytest
-import json
 import sys
 sys.path.insert(0, './src')
 
-from train import extract_features_and_label
-from ingest import build_event
+from utilis import extract_features_and_label, build_event
 
 
 fake_event = {

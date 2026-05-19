@@ -5,35 +5,10 @@ import json
 import os
 from finnhub.exceptions import FinnhubAPIException
 
+from src.utilis import get_recommendation_trends, build_event
+
 from dotenv import load_dotenv
 load_dotenv()
-
-def get_recommendation_trends(client, latest_t=0):
-
-    quote = client.quote("BINANCE:BTCUSDT")
-
-    if quote["t"] == latest_t:
-        return None
-    
-    latest_t = quote["t"]
-
-    return quote, latest_t
-
-def build_event(quote, latest_c=0):
-    label = 1 if quote["c"] > latest_c else 0
-    event = {
-        "symbol": "BINANCE:BTCUSDT",
-        "timestamp": quote["t"],
-        "current_price": quote["c"],
-        "high_price": quote["h"],
-        "low_price": quote["l"],
-        "open_price": quote["o"],
-        "previous_close": quote["pc"],
-        "change": quote["d"],
-        "change_pct": quote["dp"],
-        "label": label
-    }
-    return event
 
 def on_send_success(record_metadata):
     print(f"Message sent to {record_metadata.topic} partition {record_metadata.partition} offset {record_metadata.offset}")
@@ -72,6 +47,6 @@ def main():
             print(f"Unexpected error: {e}")
 
         time.sleep(30)  # single sleep, always, end of loop
-        
+
 if __name__ == "__main__":
     main()
