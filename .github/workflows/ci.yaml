@@ -66,8 +66,10 @@ jobs:
           username: adminuser
           key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
           script: |
+            sudo chown -R adminuser:adminuser /home/adminuser/app
+            git config --global --add safe.directory /home/adminuser/app
             cd /home/adminuser/app
             git pull
             docker compose up -d --build || true
-            
+                      
 
