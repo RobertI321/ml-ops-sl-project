@@ -54,5 +54,20 @@ jobs:
           file: ${{ matrix.dockerfile }}
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/${{ matrix.image }}:latest
-          
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest 
+    if: vars.DEPLOY_ENABLED == 'true' # Only run deploy if DEPLOY_ENABLED is set to 'true' (i.e if the vm exists and we want to deploy to it)
+    steps:
+      - name: Deploy to Azure VM
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.VM_PUBLIC_IP }}
+          username: adminuser
+          key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
+          script: |
+            cd /home/adminuser/app
+            git pull
+            docker compose up -d --build
+            
 

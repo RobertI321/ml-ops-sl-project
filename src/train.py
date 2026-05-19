@@ -39,6 +39,24 @@ def save_model(model, run_id, model_name, client):
     )
     return mv.version
 
+def load_latest_model(model_name, client):
+    try:
+        mv = client.get_model_version_by_alias(
+            name=model_name,
+            alias="Production"
+        )
+        path = mlflow.artifacts.download_artifacts(
+            run_id=mv.run_id,
+            artifact_path=f"model_v{mv.version}"
+        )
+        with open(os.path.join(path, "model.pkl"), "rb") as f:
+            model = pickle.load(f)
+        print(f"Loaded existing model version {mv.version}")
+        return model
+    except Exception as e:
+        print(f"No existing model found, starting fresh: {e}")
+        return None
+    
 def main():
 
     with open("config.yaml", "r") as f:
@@ -59,27 +77,28 @@ def main():
         'stock-recommendations',
         group_id = "stock-recommendation-group",
         bootstrap_servers='kafka:9092',
-        auto_offset_reset='earliest',
+        auto_offset_reset='latest', # Start consuming from the latest messages (new events) when the consumer starts
         enable_auto_commit=True, # Save progress automatically
         value_deserializer=lambda x: json.loads(x.decode('utf-8'))
     )
-    
-    # Models and metrics
-    model = tree.HoeffdingAdaptiveTreeClassifier(**model_config)
-    metric = metrics.ROCAUC()  # Using AUC as the evaluation metric
-
-    # Concept Drift Detection
-    drift_detector  = drift.ADWIN()
     
     with mlflow.start_run():
         mlflow.log_param("model", "HoeffdingAdaptiveTreeClassifier")
         mlflow.log_params(model_config)
         mlflow.set_tag("stage", "Production") 
 
-        event_count = 0
+        # try to load existing model (when container restarts), fall back to fresh
+        print("Trying to load existing model...")
+        existing = load_latest_model(mlflow_config["model_name"], client)
+        model = existing if existing is not None else tree.HoeffdingAdaptiveTreeClassifier(**model_config)
+
+        #Using AUC as the evaluation metric
+        metric = metrics.ROCAUC()
+        
+        # Concept Drift Detection
+        drift_detector  = drift.ADWIN()
         try:
             for message in consumer:
-                event_count += 1
 
                 print(f'Received message from Kafka: KEY = {message.key}, PARTITION = {message.partition}, OFFSET = {message.offset}')
                 event = message.value
@@ -105,13 +124,13 @@ def main():
 
                 # Check for concept drift
                 if drift_detector.drift_detected:
-                    mlflow.log_metric("drift_detected", 1, step=event_count)
+                    mlflow.log_metric("drift_detected", 1, step=message.offset)
                 else:
-                    mlflow.log_metric("drift_detected", 0, step=event_count)
+                    mlflow.log_metric("drift_detected", 0, step=message.offset)
                 
-                # Save model periodically based on event count
-                if event_count % TRIGGER_FREQUENCY == 0:
-                    print(f"Saving model version at event {event_count}")
+                # Save model periodically based the kafka message offset. This ensures we save the model after processing a certain number of events, regardless of how fast they arrive. We also check that the offset is greater than 0 to avoid saving an untrained model at the very beginning.
+                if message.offset % TRIGGER_FREQUENCY == 0 and message.offset > 0:
+                    print(f"Saving model version at event {message.offset}")
                     save_model(model, mlflow.active_run().info.run_id, mlflow_config["model_name"], client)
 
                     versions = client.get_latest_versions(name=mlflow_config["model_name"])
