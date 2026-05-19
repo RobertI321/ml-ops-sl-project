@@ -111,7 +111,7 @@ services:
       AWS_ACCESS_KEY_ID: ${ACCESS_KEY}
       AWS_SECRET_ACCESS_KEY: ${ACCESS_PASSWORD}
     entrypoint: >
-      /bin/sh -c "pip install boto3 pyarrow && mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri sqlite:///mlflow.db --default-artifact-root s3://mlflow/ --allowed-hosts 'mlflow:*,localhost:*,127.0.0.1:*,*'"
+      /bin/sh -c "pip install boto3 pyarrow && mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri sqlite:///mlflow.db --default-artifact-root s3://mlflow/ --allowed-hosts 'mlflow:*,localhost:*,127.0.0.1:*,*' --cors-allowed-origins 'http://20.100.176.101:5000'"
     depends_on:
       minio-server:
         condition: service_healthy
