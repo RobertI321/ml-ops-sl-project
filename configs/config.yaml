@@ -1,5 +1,5 @@
 model:
-  grace_period: 3
+  grace_period: 10
   tau: 0.05
   delta: 1.0e-7
   max_size: 100
@@ -12,6 +12,6 @@ mlflow:
 
 stream:
   symbol: "BINANCE:BTCUSDT"
-  trigger_frequency: 3
+  trigger_frequency: 10
   kafka_topic: "stock-recommendations"
   kafka_broker: "kafka:9092"
