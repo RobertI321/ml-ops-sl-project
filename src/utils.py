@@ -1,8 +1,3 @@
-import tempfile
-import mlflow
-import pickle
-import os
-
 # Extract features and label from events
 def extract_features_and_label(event):
     X = {
