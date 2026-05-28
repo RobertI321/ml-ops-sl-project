@@ -93,7 +93,8 @@ def main():
         model = existing if existing is not None else tree.HoeffdingAdaptiveTreeClassifier(**model_config)
 
         #Using AUC as the evaluation metric
-        metric = metrics.ROCAUC()
+        metric_auc = metrics.ROCAUC()
+        metric_acc = metrics.Accuracy()
         
         # Concept Drift Detection
         drift_detector  = drift.ADWIN()
@@ -110,7 +111,9 @@ def main():
                 # Predict and update metric
                 y_pred = model.predict_proba_one(X)
                 y_pred_class = model.predict_one(X)
-                metric.update(y, y_pred)
+                metric_auc.update(y, y_pred)
+                metric_acc.update(y,y_pred_class)
+
                 model.learn_one(X, y)
                 
                 # Update drift detector the error (1 if prediction is wrong, 0 if correct); detects when model starts making more errors than expected
@@ -118,9 +121,10 @@ def main():
                 drift_detector.update(error)
 
                 # Log AUC metric to MLflow
-                mlflow.log_metric("AUC", metric.get(), step=message.offset)
+                mlflow.log_metric("AUC", metric_auc.get(), step=message.offset)
+                mlflow.log_metric("Accuracy", metric_acc.get(), step= message.offset)
 
-                print(f"Processed event at timestamp {event['timestamp']}, AUC: {metric.get():.4f}, true label: {y}, predicted probabilities: {y_pred}, predicted class: {y_pred_class}")
+                print(f"Processed event at timestamp {event['timestamp']}, AUC: {metric_auc.get():.4f}, ACC: {metric_acc.get():.4f}, true label: {y}, predicted probabilities: {y_pred}, predicted class: {y_pred_class}")
 
                 # Check for concept drift
                 if drift_detector.drift_detected:

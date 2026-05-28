@@ -6,6 +6,7 @@ services:
       - "9092:9092"
     environment:
       KAFKA_BROKER_ID: 1
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
@@ -16,6 +17,8 @@ services:
       KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093 # Ports for broker and controller
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092 # External listener for clients
       KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093 # Quorum voters for the controller in KRaft mode
+    volumes:
+      - kafka_data:/var/lib/kafka/data
 
     healthcheck:
       test: [ "CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 > /dev/null 2>&1" ]
@@ -110,8 +113,10 @@ services:
       MLFLOW_ALLOWED_HOSTS: "*"
       AWS_ACCESS_KEY_ID: ${ACCESS_KEY}
       AWS_SECRET_ACCESS_KEY: ${ACCESS_PASSWORD}
+    volumes:
+      - mlflow_data:/mlflow
     entrypoint: >
-      /bin/sh -c "pip install boto3 pyarrow && mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri sqlite:///mlflow.db --default-artifact-root s3://mlflow/ --allowed-hosts 'mlflow:*,localhost:*,127.0.0.1:*,*' --cors-allowed-origins '*'"
+      /bin/sh -c "pip install boto3 pyarrow && mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri sqlite:////mlflow/mlflow.db --default-artifact-root s3://mlflow/ --allowed-hosts 'mlflow:*,localhost:*,127.0.0.1:*,*' --cors-allowed-origins '*'"
     depends_on:
       minio-server:
         condition: service_healthy
@@ -142,3 +147,5 @@ services:
 
 volumes:
   minio_data:
+  kafka_data:
+  mlflow_data:

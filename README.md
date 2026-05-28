@@ -118,8 +118,17 @@ Access services via the VM public IP:
 - MLflow: `http://<public_ip>:5000`
 - MinIO: `http://<public_ip>:9001`
 
+Curl the endpoint:
+
+```bash
+curl -X POST http://<public_ip>:3001/predict \
+  -H "Content-Type: application/json" \
+  -d '{"current_price": 78000, "high_price": 79000, "low_price": 77000, "open_price": 78500, "previous_close": 78200, "change_pct": 0.3}'
+```
+
 Stop the VM when not in use to avoid Azure charges (deallocate, not just stop). Destroy all resources when the project is submitted:
 
 ```bash
 terraform destroy
 ```
+
